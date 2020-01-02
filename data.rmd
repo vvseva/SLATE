@@ -1,0 +1,184 @@
+---
+title: "Untitled"
+author: "Suschevskiy Vsevolod"
+date: "17/12/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages}
+library(rvest)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+```{r links}
+req= str_c("https://www.uib.no/en/course", "")
+UiB_page <- read_html(req)
+UiB_page_links <- UiB_page %>% html_nodes(".item-list a") %>% html_attr("href")
+
+UiB_page_links = tibble(links = UiB_page_links, language = NA)
+# %>% html_attr("href")
+```
+
+```{r language}
+
+#test = head(UiB_page_links, 20)
+
+dlina = nrow(UiB_page_links)
+
+
+for (i in c(1: dlina)) {
+  try({
+    
+    
+    req= str_c("https://www.uib.no/", UiB_page_links$links[i])
+    course = read_html(req)
+    
+    course_text <- course %>% html_nodes(".fs-error") %>% html_text()
+    
+    if (is.empty(course_text) == FALSE){
+      
+      UiB_page_links$language[i] = "Norsk"
+      
+    }
+    else { UiB_page_links$language[i] = "English" }
+    
+    Sys.sleep(sample(c(0.5, 1, 1.5, 2), 1))}
+  , silent = F
+  )
+}
+
+
+UiB_page_links$language = as.factor(UiB_page_links$language)
+summary(UiB_page_links$language)
+
+# English   Norsk 
+#    1347    1456 
+# So 1456 courses have no text in english at all
+```
+
+```{r length}
+
+#UiB_page_links_en_b = UiB_page_links_en
+
+UiB_page_links_en = UiB_page_links %>% filter(language == "English")
+
+UiB_page_links_en$size = NA
+
+dlina = nrow(UiB_page_links_en)
+
+for (i in c(1: dlina)) {
+  try({
+    req= str_c("https://www.uib.no/", UiB_page_links_en$links[i])
+    course = read_html(req)
+    course_text <- course %>% html_nodes("h3 , p") %>% html_text()
+    UiB_page_links_en$size[i] = length(course_text)
+    
+    Sys.sleep(sample(c(0.5, 1, 0.75), 1))}
+  , silent = F
+  )
+}
+
+UiB_page_links_en  %>% 
+ggplot(aes(x = size))+
+geom_density(aes(y = ..count..), fill = "steelblue", alpha = 0.3)+
+geom_histogram(binwidth = 1, fill = "steelblue")+
+geom_vline(x = )
+theme_minimal()
+```
+
+```{r HEADING}
+UiB_page_links_en = UiB_page_links %>% filter(language == "English")
+
+dlina = nrow(UiB_page_links_en)
+
+
+course_text <- course %>% html_nodes("h3") %>% html_text()
+Headings = c(course_text)
+Headings[27] = "Subject Overlap"
+Headings[28] = "Credit Reduction due to Course Overlap"
+
+
+#course_text$head = 
+course_text$head = course_text$course_text %>% str_detect( paste(Headings, collapse = "|"))
+course_text$heading = NA
+
+
+for(z in 1:NROW(course_text)){
+  if (course_text$head[z] == TRUE){
+    a = course_text$course_text[z]
+    course_text$heading[z] = a
+  } else {
+  course_text$heading[z] = a
+  }
+}
+```
+
+
+
+
+```{r}
+# UiB.syllabus = NA
+UiB_page_links_en = UiB_page_links %>% filter(language == "English")
+
+dlina = nrow(UiB_page_links_en)
+
+
+for (i in 1:dlina) {
+  try({
+    req= str_c("https://www.uib.no/", UiB_page_links_en$links[i])
+    course = read_html(req)
+    
+    course_facts <- course %>% html_nodes(".study-facts__value") %>% html_text()
+    facts = tibble(credits = course_facts[1], semester = course_facts[2], code = course_facts[3], number = course_facts[4])
+    
+    #ext_links = course %>% html_nodes(".study-facts__value li") %>% html_children()
+    
+    #related =  course %>% html_nodes("#block-uib-study-study-related a") %>% html_attr("text")
+    
+    #links = NA
+    # for (y in 1:length(ext_links)) {
+    #   link = tibble(name = ext_links[[y]] %>% html_text, href = ext_links[[y]] %>% html_attr("href"))
+    #   links = rbind(links, link)
+    #   }
+    # ext_links = tibble(links = links[-1,])
+    
+    course_text <- course %>% html_nodes("h3, p") %>% html_text()
+    
+    course_text = tibble(course_text = course_text)
+    
+    #course_text_falt = paste(unlist(course_text), collapse =" <p> ")
+    course_text$head = course_text$course_text %>% str_detect( paste(Headings, collapse = "|"))
+    course_text$heading = NA
+
+
+    for(z in 1:NROW(course_text)){
+      if (course_text$head[z] == TRUE){
+      a = course_text$course_text[z]
+      course_text$heading[z] = a
+      } else {
+      course_text$heading[z] = a
+      }
+    } 
+   #  course.ECTS = stringr::str_extract_all(course_text_falt, pattern = "(?<=ECTS Credits).+(?= Level of Study)") %>% unlist()
+   # course.Level = stringr::str_extract_all(course_text_falt, pattern = "(?<=Level of Study).+(?= Teaching semester)") %>% unlist()
+   # course.Semester = stringr::str_extract_all(course_text_falt, pattern = "(?<=Teaching semester).+(?= Place of Instruction)") %>% unlist()
+    
+    course_text$credit = facts$credits
+    course_text$semester = facts$semester
+    course_text$code = facts$code
+    
+    
+    UiB.syllabus = bind_rows(UiB.syllabus, course_text)
+
+    Sys.sleep(sample(c(0.5, 1, 0.75), 1))}
+  , silent = F
+  )
+}
+```
+
+
+
