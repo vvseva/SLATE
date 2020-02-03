@@ -1,0 +1,360 @@
+---
+title: "model"
+author: "Suschevskiy Vsevolod"
+date: "1/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(reticulate)
+use_virtualenv("~/SLATE/.venv", required = T)
+reticulate::py_discover_config()
+
+
+Sys.setenv(RETICULATE_PYTHON = "~/SLATE/.venv/bin/python")
+use_python("~/SLATE/.venv/bin/python",required = T)
+```
+
+```{python}
+texts = "An example of poorly writen text with some 02i1"
+
+#texts
+
+#pip install --upgrade gensim
+#sudo easy_install gensim
+texts
+```
+
+data cleaning
+
+```{r}
+
+
+#syllabus = UiB.syllabus.description$text
+
+library(tm)
+library(dplyr)
+library(stringr)
+
+stopWords <- stopwords("en")
+
+
+UiB.syllabus.description$text = str_to_lower(UiB.syllabus.description$text)
+UiB.syllabus.description$text = str_replace_all(UiB.syllabus.description$text, "[[:punct:]]", " ")
+UiB.syllabus.description$text = str_replace_all(UiB.syllabus.description$text, "[[:digit:]]", "")
+
+
+require("tm")
+UiB.syllabus.description$text = removeWords(UiB.syllabus.description$text,stopWords)
+UiB.syllabus.description$text = removeWords(UiB.syllabus.description$text,coursestop$words)
+UiB.syllabus.description$text = str_trim(UiB.syllabus.description$text)
+
+
+x <- unlist(strsplit(syllabus, " "))
+
+x <- x[!x %in% stopWords]
+x <- x[!x %in% coursestop$words]
+
+
+syllabus = x
+remove(x)
+
+syllabus = paste(syllabus, collapse = " ")
+syllabus = str_trim(syllabus)
+```
+
+
+input and input cleaning
+
+```{r}
+info = UiB.syllabus.description %>% filter(doc_id == "INFO282") %>% select(text)
+info = str_to_lower(info)
+info = str_replace_all(info, "[[:punct:]]", " ")
+info = str_replace_all(info, "[[:digit:]]", "")
+info = str_trim(info)
+info = unlist(strsplit(info, " "))
+info = info[!info %in% stopWords]
+info = info[!info %in% coursestop$words]
+info = paste(info, collapse = " ")
+info = str_trim(info)
+```
+
+
+all syllabus
+
+```{r}
+fileConn<-file("syllabus.txt")
+writeLines(syllabus, fileConn)
+close(fileConn)
+```
+
+
+from txt to corpus format
+
+```{python}
+# import numpy
+# texts = "An example of poorly writen text with some 02i1"
+# import gensim
+
+from gensim.test.utils import datapath
+from gensim.models.word2vec import Text8Corpus
+from gensim.models.phrases import Phrases, Phraser
+
+# Load training data.
+
+#text = gensim.utils.simple_preprocess(text)
+
+# sentences = Text8Corpus(datapath('testcorpus.txt'))
+sentences = Text8Corpus("~/SLATE/syllabus.txt")
+
+#sentences = Text8Corpus(text)
+
+# The training corpus must be a sequence (stream, generator) of sentences,
+# with each sentence a list of tokens:
+#print(list(sentences)[0][:10])
+#sentences
+```
+
+model training
+https://radimrehurek.com/gensim/models/phrases.html 
+
+```{python}
+# Train a toy bigram model.
+phrases = Phrases(sentences, min_count=2, threshold=2.0)
+phrases
+# Apply the trained phrases model to a new, unseen sentence.
+#phrases[['data', 'sleep', 'analysis', 'disorder']]
+#['trees_graph', 'minors']
+# The toy model considered "trees graph" a single phrase => joined the two
+# tokens into a single token, `trees_graph`.
+```
+
+
+
+# ```{r}
+# syll1 =  c("gained aspects specified fields literary theory focuses   critical independent main questions tied study literary theory   capable reflecting theoretical questions raises   express correct academic english   gained aspects specified fields literary theory focuses   critical independent main questions tied study literary theory   capable reflecting theoretical questions raises   express correct academic english  offer account key international supranational institutions affecting norwegian policies political processes organized function  theories creation  emergence  function influence international organizations  context origins institutions  development institutions international supranational level light  political theory consider international organizations light democratic legal criteria")
+# 
+# ```
+
+model use
+
+```{python}
+#r.syll1.split()
+r.info.split()
+print("bigram")
+phrases[r.info.split()]
+```
+
+THE END of the script
+
+
+```{python}
+# Update the model with two new sentences on the fly.
+#phrases.add_vocab([["hello", "world"], ["meow"]])
+# Export the trained model = use less RAM, faster processing. Model updates no longer possible.
+bigram = Phraser(phrases)
+#bigram[['trees', 'graph', 'minors']]  # apply the exported model to a sentence
+['trees_graph', 'minors']
+
+# Apply the exported model to each sentence of a corpus:
+for sent in bigram[sentences]:
+     pass
+```
+
+
+```{python}
+# Update the model with two new sentences on the fly.
+#phrases.add_vocab([["hello", "world"], ["meow"]])
+# Export the trained model = use less RAM, faster processing. Model updates no longer possible.
+bigram = Phraser(phrases)
+#bigram[['trees', 'graph', 'minors']]  # apply the exported model to a sentence
+['trees_graph', 'minors']
+
+# Apply the exported model to each sentence of a corpus:
+for sent in bigram[sentences]:
+     pass
+
+# Save / load an exported collocation model.
+bigram.save("/tmp/my_bigram_model.pkl")
+bigram_reloaded = Phraser.load("/tmp/my_bigram_model.pkl")
+bigram_reloaded[['trees', 'graph', 'minors']]  # apply the exported model to a sentence
+['trees_graph', 'minors']
+```
+
+
+
+```{r}
+py$bigram$
+```
+
+### New package
+
+
+```{python}
+#n pip install --user -U nltk
+```
+
+
+```{python}
+import nltk
+#nltk.download('genesis')
+from nltk.collocations import *
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+trigram_measures = nltk.collocations.TrigramAssocMeasures()
+
+# change this to read in your data
+finder = BigramCollocationFinder.from_words(
+    nltk.corpus.genesis.words('/students/vvsuschevskiy/SLATE/syllabus.txt'))
+
+# only bigrams that appear 3+ times
+finder.apply_freq_filter(3)
+
+# return the 10 n-grams with the highest PMI
+finder.nbest(bigram_measures.pmi, 10)
+
+```
+
+### Fast text
+
+```{python}
+# from gensim.models import FastText  # FIXME: why does Sphinx dislike this import?
+from gensim.test.utils import common_texts  # some example sentences
+
+#print(common_texts)
+common_texts.__class__
+```
+
+```{python}
+f = open('/students/vvsuschevskiy/SLATE/syllabus.txt', 'r')
+x = f.readlines()
+f.close()
+
+for a in x:
+  a.split()
+```
+
+
+
+```{python}
+# from gensim.models import FastText  # FIXME: why does Sphinx dislike this import?
+from gensim.test.utils import common_texts  # some example sentences
+
+print(common_texts[0])
+
+print(len(common_texts))
+
+model = FastText(size=4, window=3, min_count=1)  # instantiate
+model.build_vocab(sentences=common_texts)
+model.train(sentences=common_texts, total_examples=len(common_texts), epochs=10)  # train
+```
+
+### keyword extraction 
+
+```{r}
+library(readr)
+library(tidyverse)
+library(udpipe)
+library(tidytext)
+tagger <- udpipe_download_model("english")
+```
+
+```{r}
+lo = UiB.syllabus.description.LO
+
+#lo_descr <- tolower(paste(lo, collapse = "\n"))
+lo_descr = lo
+lo_descr$text = tolower(lo$text)
+tagger <- udpipe_load_model(tagger$file_model)
+lo_descr <- udpipe_annotate(tagger, lo_descr$text, doc_id = lo_descr$code)
+lo_descr <- as.data.frame(lo_descr)
+
+?udpipe_annotate
+
+
+lo_descr <- anti_join(lo_descr, stop_words, by=c("lemma" = "word"))
+lo_descr <- anti_join(lo_descr, coursestop, by=c("lemma" = "words"))
+coursestop2 = tibble(words = c("follow", "outcome", "complete", "have", "be", 
+                               "teaching", "familiar", "define", "insight", "gain", 
+                               "acquire", "good", "candidate", "other", "various", "type", 
+                               "key", "central", "suitable", "advanced", "most", "importants", "further", "main", "feature", "subject", "field", "own", "skill", "¿", "select", "one", "new", "related"))
+lo_descr <- anti_join(lo_descr, coursestop2, by=c("lemma" = "words"))
+```
+
+```{r}
+library(textrank)
+keyw <- textrank_keywords(lo_descr$lemma,
+                          relevant = lo_descr$upos %in% c("NOUN", "VERB", "ADJ"))
+
+?textrank_keywords
+
+keyw$keywords %>% arrange(desc(freq)) %>% 
+  filter(ngram > 1, freq > 5) #%>% 
+  # filter(str_detect(keyword, "technology"))
+#-> keyw
+
+write.csv(key_skills, "key_skills.csv")
+
+# key_skills$single = 
+#key_skills
+ ks = str_split(key_skills$keyword, pattern = "-", simplify = F)
+ 
+for (i in 1:nrow(key_skills)){
+   ks[[i]]
+   
+ }
+```
+
+
+```{r}
+kwd = key_skills %>% pull(keyword)
+names(kwd) = seq(1, length(kwd))
+kwdlist = str_split(kwd,"-")
+
+lo_descr$doc_id = factor(lo_descr$doc_id)
+
+lo_descr %>% group_by(doc_id) %>% group_map(function(.x,.y){
+  length(intersect(.x$lemma,
+kwdlist[[1]]))/length(kwdlist[[1]])
+  })
+
+strings <- kwdlist[[1]]
+length(strings)
+
+lo2 =  lo_descr %>% group_by(doc_id) %>% mutate(yes_in_group = any(str_detect(sentence, paste(strings, collapse = "|"))))
+
+summary(lo2$yes_in_group)
+```
+
+```{r}
+library(elasticsearchr)
+
+ma <- query('{
+  "match_all": {}
+}')
+
+
+mlt <- query('{
+        "more_like_this" : {
+            "fields" : ["text"],
+            "like" : "literary theory",
+            "min_term_freq" : 1,
+            "max_query_terms" : 12
+        }
+    }
+')
+
+sr <- query('{
+        "match" : {
+            "text" : {
+                "query" : "dynamic-behaviour, management"
+            }
+        }
+    }')
+
+ df = elastic("private", "testslb1") %search% (sr)
+ 
+ head(df$code)
+```
+
