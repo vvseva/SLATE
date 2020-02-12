@@ -7,3 +7,7 @@ Currently I have published only sorting sistem with elastic search, and extracti
 NLP models are stored separately, but main ideas is to exted search query and reccomend some of courses with doc2vec of the description
 
 Curret version is published on [pub nosoc] (https://pub.nosoc.io/content/37/)
+
++ data.rmd -- data parsing from the website of the UiB
++ fastext.py -- train model on a bigger courpus for query extension 
++ model.rmd -- python & R pipeline for extracting keywords 
