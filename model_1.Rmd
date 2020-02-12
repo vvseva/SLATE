@@ -5,6 +5,8 @@ date: "1/30/2020"
 output: html_document
 ---
 
+### Well actualy on r, but here I use reticulate to combine data cleaning with r and NLP for python
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
