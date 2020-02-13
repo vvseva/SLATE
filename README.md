@@ -1,4 +1,4 @@
-# SLATE
+# recsys
 
 That is a project with UiB, where I work as hourly paid worker and develop a recommendation system.
 
