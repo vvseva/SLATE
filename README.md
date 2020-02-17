@@ -12,3 +12,4 @@ Curret version is published on [pub nosoc] (https://pub.nosoc.io/content/37/)
 + fastext.py -- train model on a bigger courpus for query extension . Data from wiki books (https://en.wikibooks.org/wiki/Help:Database_download)
 + model.rmd -- python & R pipeline for extracting keywords 
 + word2vec.ipynb -- use of pretrained model, to extract queries and skills, but in a form of bi-gramms
++ run_doc2vec_gensim.py -- find similar course base on a full description 
